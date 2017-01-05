@@ -344,8 +344,8 @@ public class StringPointer implements Serializable, CharSequence, Comparable<Str
 	
 	public StringPointer(char[] value, int offset, int length){
 		this.value = value;
-		this.offset = 0;
-		this.length = value.length;
+		this.offset = offset;
+		this.length = length;
 	}
 	
 	/**
