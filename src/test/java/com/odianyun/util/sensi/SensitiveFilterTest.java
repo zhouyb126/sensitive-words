@@ -32,6 +32,20 @@ public class SensitiveFilterTest extends TestCase{
 		
 	}
 	
+	public void testLogic(){
+		
+		SensitiveFilter filter = new SensitiveFilter();
+		
+		filter.put("你好");
+		filter.put("你好1");
+		filter.put("你好2");
+		filter.put("你好3");
+		filter.put("你好4");
+		
+		System.out.println(filter.filter("你好3天不见", '*'));
+		
+	}
+	
 	public void testSpeed() throws Exception{
 		
 		PrintStream ps = new PrintStream("/data/敏感词替换结果.txt");

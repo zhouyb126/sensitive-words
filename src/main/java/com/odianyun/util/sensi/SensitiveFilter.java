@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.NavigableSet;
 
 /**
@@ -194,7 +195,7 @@ public class SensitiveFilter implements Serializable{
 						 */
 						NavigableSet<StringPointer> desSet = node.words.headSet(sp.substring(i), true);
 						if(desSet != null){
-							for(StringPointer word: desSet){
+							for(StringPointer word: desSet.descendingSet()){
 								/*
 								 * 仍然需要再判断一次，例如"色情信息哪里有？"，
 								 * 如果节点只包含"色情电影"一个词，
