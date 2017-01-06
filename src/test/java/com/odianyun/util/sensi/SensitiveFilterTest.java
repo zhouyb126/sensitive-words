@@ -14,9 +14,21 @@ public class SensitiveFilterTest extends TestCase{
 	
 	public void test() throws Exception{
 		
+		// 使用默认单例（加载默认词典）
 		SensitiveFilter filter = SensitiveFilter.DEFAULT;
+		// 向过滤器增加一个词
+		filter.put("婚礼上唱春天在哪里");
 		
-		System.out.println(filter.filter("会上，主席进行了发言。", '*'));
+		// 待过滤的句子
+		String sentence = "然后，市长在婚礼上唱春天在哪里。";
+		// 进行过滤
+		String filted = filter.filter(sentence, '*');
+		
+		// 如果未过滤，则返回输入的String引用
+		if(sentence != filted){
+			// 句子中有敏感词
+			System.out.println(filted);
+		}
 		
 	}
 	
@@ -42,22 +54,20 @@ public class SensitiveFilterTest extends TestCase{
 			}
 		}
 		
-		System.out.println(String.format("共加载 %d 行，%d 字符。", testSuit.size(), length));
+		System.out.println(String.format("待过滤文本共 %d 行，%d 字符。", testSuit.size(), length));
 		
 		
 		SensitiveFilter filter = SensitiveFilter.DEFAULT;
 		
 		int replaced = 0;
 		
-		for(String line: testSuit){
-			if(! line.contains("`")){
-				String result = filter.filter(line, '`');
-				if(result.contains("`")){
-					ps.println(line);
-					ps.println(result);
-					ps.println();
-					replaced ++;
-				}
+		for(String sentence: testSuit){
+			String result = filter.filter(sentence, '*');
+			if(result != sentence){
+				ps.println(sentence);
+				ps.println(result);
+				ps.println();
+				replaced ++;
 			}
 		}
 		ps.close();
@@ -67,7 +77,7 @@ public class SensitiveFilterTest extends TestCase{
 			filter.filter(line, '*');
 		}
 		timer = System.currentTimeMillis() - timer;
-		System.out.println(String.format("共耗时 %1.3f 秒， 速度为 %1.1f字符/毫秒", timer * 1E-3, length / (double) timer));
+		System.out.println(String.format("过滤耗时 %1.3f 秒， 速度为 %1.1f字符/毫秒", timer * 1E-3, length / (double) timer));
 		System.out.println(String.format("其中 %d 行有替换", replaced));
 		
 	}

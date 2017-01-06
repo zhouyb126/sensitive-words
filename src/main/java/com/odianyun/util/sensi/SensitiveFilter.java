@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.NavigableSet;
 
 /**
  * 敏感词过滤器，以过滤速度优化为主。<br/>
@@ -80,9 +81,14 @@ public class SensitiveFilter implements Serializable{
 	 * @author ZhangXiaoye
 	 * @date 2017年1月5日 下午2:35:21
 	 */
-	public void put(String word){
+	public boolean put(String word){
+		// 长度小于2的不加入
 		if(word == null || word.trim().length() < 2){
-			return;
+			return false;
+		}
+		// 两个字符的不考虑
+		if(word.length() == 2 && word.matches("\\w\\w")){
+			return false;
 		}
 		StringPointer sp = new StringPointer(word.trim());
 		// 计算头两个字符的hash
@@ -107,23 +113,30 @@ public class SensitiveFilter implements Serializable{
 				// 匹配节点
 				if(node.headTwoCharMix == mix){
 					node.words.add(sp);
-					return;
+					return true;
 				}
 				// 如果匹配到最后仍然不成功，则追加一个节点
 				if(node.next == null){
 					new SensitiveNode(mix, node).words.add(sp);
-					return;
+					return true;
 				}
 			}
 		}
+		return true;
 	}
 	
 	/**
-	 * 对句子进行敏感词过滤
+	 * 对句子进行敏感词过滤<br/>
+	 * 如果无敏感词返回输入的sentence对象，即可以用下面的方式判断是否有敏感词：<br/><code>
+	 * String result = filter.filter(sentence, '*');<br/>
+	 * if(result != sentence){<br/>
+	 * &nbsp;&nbsp;// 有敏感词<br/>
+	 * }
+	 * </code>
 	 * 
 	 * @param sentence 句子
 	 * @param replace 敏感词的替换字符
-	 * @return 过滤后的句子
+	 * @return 过滤后的句子 
 	 * @author ZhangXiaoye
 	 * @date 2017年1月5日 下午4:16:31
 	 */
@@ -165,6 +178,7 @@ public class SensitiveFilter implements Serializable{
 				 * 循环所有的节点，如果非敏感词，
 				 * mix相同的概率非常低，提高效率
 				 */
+				outer:
 				for(; node != null; node = node.next){
 					/*
 					 * 对于一个节点，先根据头2个字符判断是否属于这个节点。
@@ -175,25 +189,30 @@ public class SensitiveFilter implements Serializable{
 						/*
 						 * 查出比剩余sentence小的最大的词。
 						 * 例如剩余sentence为"色情电影哪家强？"，
-						 * 这个节点含三个词从小到大为：“色情”、“色情电影”、“色情信息”。
-						 * 则取到的word为“色情电影”
+						 * 这个节点含三个词从小到大为："色情"、"色情电影"、"色情信息"。
+						 * 则从“色情电影”开始向前匹配
 						 */
-						StringPointer word = node.words.floor(sp.substring(i));
-						/*
-						 * 仍然需要再判断一次，例如“色情信息哪里有？”，
-						 * 如果节点只包含“色情电影”一个词，
-						 * 仍然能够取到word为“色情电影”，但是不该匹配。
-						 */
-						if(word != null && sp.nextStartsWith(i, word)){
-							// 匹配成功，将匹配的部分，用replace制定的内容替代
-							sp.fill(i, i + word.length, replace);
-							// 跳过已经替代的部分
-							step = word.length;
-							// 标示有替换
-							replaced = true;
-							// 跳出for循环（然后是while循环的下一个位置）
-							break;
+						NavigableSet<StringPointer> desSet = node.words.headSet(sp.substring(i), true);
+						if(desSet != null){
+							for(StringPointer word: desSet){
+								/*
+								 * 仍然需要再判断一次，例如"色情信息哪里有？"，
+								 * 如果节点只包含"色情电影"一个词，
+								 * 仍然能够取到word为"色情电影"，但是不该匹配。
+								 */
+								if(sp.nextStartsWith(i, word)){
+									// 匹配成功，将匹配的部分，用replace制定的内容替代
+									sp.fill(i, i + word.length, replace);
+									// 跳过已经替代的部分
+									step = word.length;
+									// 标示有替换
+									replaced = true;
+									// 跳出循环（然后是while循环的下一个位置）
+									break outer;
+								}
+							}
 						}
+						
 					}
 				}
 			}
